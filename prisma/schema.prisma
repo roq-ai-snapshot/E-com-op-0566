@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model abandoned_cart {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id         String                @db.Uuid
+  store_id            String                @db.Uuid
+  user                user                  @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  store               store                 @relation(fields: [store_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  abandoned_cart_item abandoned_cart_item[]
+}
+
+model abandoned_cart_item {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cart_id        String         @db.Uuid
+  inventory_id   String         @db.Uuid
+  quantity       Int
+  abandoned_cart abandoned_cart @relation(fields: [cart_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inventory      inventory      @relation(fields: [inventory_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model customer_segment {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                    String                    @db.VarChar(255)
+  store_id                String                    @db.Uuid
+  store                   store                     @relation(fields: [store_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customer_segment_member customer_segment_member[]
+}
+
+model customer_segment_member {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id      String           @db.Uuid
+  segment_id       String           @db.Uuid
+  user             user             @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customer_segment customer_segment @relation(fields: [segment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model inventory {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_name           String                   @db.VarChar(255)
+  quantity               Int
+  store_id               String                   @db.Uuid
+  abandoned_cart_item    abandoned_cart_item[]
+  store                  store                    @relation(fields: [store_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_item             order_item[]
+  product_recommendation product_recommendation[]
+}
+
+model order {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id String       @db.Uuid
+  store_id    String       @db.Uuid
+  status      String       @db.VarChar(255)
+  user        user         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  store       store        @relation(fields: [store_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_item  order_item[]
+}
+
+model order_item {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id     String    @db.Uuid
+  inventory_id String    @db.Uuid
+  quantity     Int
+  inventory    inventory @relation(fields: [inventory_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order        order     @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_recommendation {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id  String    @db.Uuid
+  inventory_id String    @db.Uuid
+  user         user      @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inventory    inventory @relation(fields: [inventory_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model store {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String             @db.VarChar(255)
+  owner_id         String             @db.Uuid
+  abandoned_cart   abandoned_cart[]
+  customer_segment customer_segment[]
+  inventory        inventory[]
+  order            order[]
+  user             user               @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                   String?                   @unique @db.VarChar(255)
+  firstName               String?                   @db.VarChar(255)
+  lastName                String?                   @db.VarChar(255)
+  roq_user_id             String                    @db.VarChar(255)
+  tenant_id               String                    @db.VarChar(255)
+  abandoned_cart          abandoned_cart[]
+  customer_segment_member customer_segment_member[]
+  order                   order[]
+  product_recommendation  product_recommendation[]
+  store                   store[]
+}
